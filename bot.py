@@ -48,6 +48,7 @@ class RustPlusBot(commands.Bot):
             'cogs.events',
             'cogs.team',
             'cogs.team_chat',
+            'cogs.team_tracker',
             'cogs.tracking',
             'cogs.storage',
             'cogs.cameras',
