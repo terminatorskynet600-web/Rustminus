@@ -129,6 +129,7 @@ class RustPlusBot(commands.Bot):
         
         # Skip if already setup
         if guild_id in self.config.get('guilds', {}):
+            logger.info(f"Channels already setup for {guild.name}")
             return
         
         try:
@@ -149,6 +150,13 @@ class RustPlusBot(commands.Bot):
                 topic="Server status and info"
             )
             
+            # Create team tracker channel
+            tracker_channel = await guild.create_text_channel(
+                "team-tracker",
+                category=category,
+                topic="Auto-updating team member status"
+            )
+            
             # Save config
             if 'guilds' not in self.config:
                 self.config['guilds'] = {}
@@ -156,6 +164,7 @@ class RustPlusBot(commands.Bot):
             self.config['guilds'][guild_id] = {
                 'pairing_channel': pairing_channel.id,
                 'status_channel': status_channel.id,
+                'tracker_channel': tracker_channel.id,
                 'category': category.id
             }
             self.save_config()
@@ -174,6 +183,11 @@ class RustPlusBot(commands.Bot):
                 inline=False
             )
             embed.add_field(
+                name="👥 Team Tracker",
+                value=f"Team status updates → {tracker_channel.mention}",
+                inline=False
+            )
+            embed.add_field(
                 name="💡 How to Use",
                 value="1. Pair device in-game\n2. Use `/rplpair <id> <name>` here\n3. Control with `!on <name>` in team chat",
                 inline=False
@@ -181,8 +195,30 @@ class RustPlusBot(commands.Bot):
             
             await pairing_channel.send(embed=embed)
             
+            # Notify team tracker cog to auto-setup
+            await self.auto_setup_team_tracker(guild, tracker_channel)
+            
         except Exception as e:
             logger.error(f"Error setting up channels: {e}")
+    
+    async def auto_setup_team_tracker(self, guild, channel):
+        """Auto-setup team tracker in the tracker channel"""
+        try:
+            # Wait a bit for cogs to be ready
+            await asyncio.sleep(2)
+            
+            # Get the team tracker cog
+            team_tracker_cog = self.get_cog('TeamTracker')
+            if not team_tracker_cog:
+                logger.warning("TeamTracker cog not found")
+                return
+            
+            # Auto-setup tracker
+            await team_tracker_cog.auto_setup_tracker(guild, channel)
+            logger.info(f"✅ Auto-setup team tracker for {guild.name}")
+            
+        except Exception as e:
+            logger.error(f"Error auto-setting up team tracker: {e}")
     
     async def on_ready(self):
         logger.info(f'✅ {self.user.name}')
@@ -214,6 +250,13 @@ class RustPlusBot(commands.Bot):
         guild_config = self.config.get('guilds', {}).get(str(guild_id))
         if guild_config:
             return guild_config.get('pairing_channel')
+        return None
+    
+    def get_tracker_channel(self, guild_id):
+        """Get tracker channel for a guild"""
+        guild_config = self.config.get('guilds', {}).get(str(guild_id))
+        if guild_config:
+            return guild_config.get('tracker_channel')
         return None
     
     async def close(self):

@@ -34,6 +34,50 @@ class TeamTracker(commands.Cog):
         with open(self.tracker_file, 'w') as f:
             json.dump(self.trackers, f, indent=2)
     
+    async def auto_setup_tracker(self, guild, channel, server_name="EU TideRust Solo/Duo/Trio/QuadNoob", wipe_schedule="Friendly/Monthly/No BP Wipes"):
+        """Auto-setup team tracker - called by bot on startup"""
+        try:
+            # Wait for Rust+ to be ready
+            import asyncio
+            for i in range(60):
+                if rust._ready:
+                    break
+                await asyncio.sleep(1)
+            
+            if not rust._ready:
+                logger.warning("Rust+ not ready, skipping auto-setup")
+                return
+            
+            # Get initial team data
+            team_info = await rust.get_team_info()
+            if not team_info or not hasattr(team_info, 'members') or not team_info.members:
+                logger.warning("Could not get team info for auto-setup")
+                return
+            
+            # Create initial embed
+            embed = await self.create_team_embed(team_info, server_name, wipe_schedule)
+            
+            # Send the embed
+            message = await channel.send(embed=embed)
+            
+            # Save tracker configuration
+            tracker_key = f"{guild.id}_{channel.id}"
+            self.trackers[tracker_key] = {
+                'guild_id': guild.id,
+                'channel_id': channel.id,
+                'message_id': message.id,
+                'server_name': server_name,
+                'wipe_schedule': wipe_schedule,
+                'friendly': True,
+                'leader_id': team_info.leader_steam_id if hasattr(team_info, 'leader_steam_id') else None
+            }
+            self.save_trackers()
+            
+            logger.info(f"✅ Auto-setup team tracker for {guild.name} in #{channel.name}")
+            
+        except Exception as e:
+            logger.error(f"Error in auto_setup_tracker: {e}")
+    
     @app_commands.command(name="team-tracker-setup", description="Setup auto-updating team tracker")
     @app_commands.describe(
         server_name="Server name to display (e.g., EU TideRust Solo/Duo/Trio/QuadNoob)",
@@ -297,7 +341,7 @@ class TeamTracker(commands.Cog):
         guild_trackers = {k: v for k, v in self.trackers.items() if v['guild_id'] == interaction.guild_id}
         
         if not guild_trackers:
-            await interaction.response.send_message("📭 No team trackers in this server", ephemeral=True)
+            await interaction.response.send_message("🔭 No team trackers in this server", ephemeral=True)
             return
         
         embed = discord.Embed(
