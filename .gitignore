@@ -1,0 +1,38 @@
+# Create .gitignore file
+touch .gitignore
+```
+
+Add this content to `.gitignore`:
+```
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Data and config
+data/
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# Compressed files
+*.tar.gz
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db

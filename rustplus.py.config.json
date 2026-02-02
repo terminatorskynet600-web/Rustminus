@@ -1,0 +1,12 @@
+{
+    "expo_push_token": "ExponentPushToken[DLmfxiAR7MG0Jlsq-jwvGT]",
+    "fcm_credentials": {
+        "fcm": {
+            "token": "f6F2qRv_B0I:APA91bHqd4EyfnpUg_ikwY1JNKPq4gazRl_WKhEQUUFAG-MwBUJ11FdSU2dG2UMSpv96K-e5CRY1MUWqm9wUCKahSaEUupDIlI5v6pNzvoTAKwYl0PS6cE8"
+        },
+        "gcm": {
+            "androidId": "5087300709026980480",
+            "securityToken": "2443968229405983975"
+        }
+    }
+}
